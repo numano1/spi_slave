@@ -33,6 +33,7 @@ do
 done
 
 
+
 #$FIRRTL #Sets up THESDKHOME from gloabl setup file
 #. ../../TheSDK.config
 ROOTPATH=`pwd`
@@ -90,7 +91,7 @@ done`
 `for i in ${MODULES}; do
 	echo ".PHONY: test_$i"
     echo "test_$i:"
-	echo -e "\t\\$(SBT) 'runMain $i.unit_test'" 
+	echo -e "\t\\$(SBT) 'testOnly *${i}Test'" 
 done`
 
 
