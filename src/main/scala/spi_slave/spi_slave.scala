@@ -2,8 +2,11 @@ package spi_slave
 
 import chisel3._
 import chisel3.util._
-import chisel3.iotesters.{PeekPokeTester, Driver}
-import chisel3.experimental.{withClock}
+import chiseltest._
+import org.scalatest.flatspec.AnyFlatSpec
+import chisel3.experimental._
+import chisel3.withClock
+import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
 import async_set_register._
 
 class spi_slave(val cfg_length : Int = 8, val mon_length : Int = 8) extends Module {
@@ -96,7 +99,7 @@ object spi_slave extends App {
             case "-h" :: tail => {
                 println(usage)
                 val (newopts, newargs) = getopts(options, tail)
-                sys.exit
+                sys.exit()
                 (Map("h"->"") ++ newopts, newargs)
             }
             case option :: value :: tail if optsWithArg contains option => {
@@ -121,19 +124,26 @@ object spi_slave extends App {
     // Parse the options
     val (options,arguments)= getopts(defaultoptions,args.toList)
   
-    chisel3.Driver.execute(arguments.toArray, () => 
-            new spi_slave(
-                cfg_length=options("cfg_length").toInt, 
-                mon_length=options("mon_length").toInt
-            )
+  (new ChiselStage).execute(arguments.toArray, Seq(
+    ChiselGeneratorAnnotation(() =>
+      new spi_slave(
+        cfg_length = options("cfg_length").toInt,
+        mon_length = options("mon_length").toInt
+      )
     )
+  ))
 }
 
-class unit_tester(c: spi_slave) extends PeekPokeTester(c) {
-}
-
-object unit_test extends App {
-    iotesters.Driver.execute(args, () => new spi_slave){
-            c=>new unit_tester(c)
+class spi_slaveTest extends AnyFlatSpec with ChiselScalatestTester {
+  "spi_slave" should "initialize and respond" in {
+    test(new spi_slave(cfg_length = 8, mon_length = 8)) { dut =>
+      // Example test: poke and check that it compiles
+      dut.io.mosi.poke(1.U)
+      dut.io.cs.poke(0.U)
+      dut.io.monitor_in.poke(42.U)
+      dut.clock.step()
+      // You can add expectations here if needed
+      // dut.io.miso.expect(1.U)
     }
+  }
 }
